@@ -1,20 +1,15 @@
 pragma solidity ^0.4.24;
 
-contract OriginalToken {
+import "./Original.sol";
+
+contract OriginalToken is Original {
 
     string public encryptedKey;
     string public link;
     address public owner;
-    address private newOwner;
-    
-    constructor(string _encryptedKey, string _link) public {
-        owner = msg.sender;
-        link = _link;
-        newOwner = address(0);
-        encryptedKey = _encryptedKey;
-    }
-    
-    function sendToken(address _to) public returns(bool) {
+    address internal newOwner;
+
+    function sendToken(address _to) external returns(bool) {
         require(owner == msg.sender,"not the owner");
         require(newOwner == address(0),"pending payment");
         newOwner = _to;
@@ -22,42 +17,48 @@ contract OriginalToken {
     }
     
     
-    function accept() public returns(bool) { 
+    function accept() external returns(bool) { 
         require(msg.sender == newOwner,"not the recipient");
         owner = newOwner;
         newOwner = address(0);
         return true;
     }
 
-    function refuse() public returns(bool) {
+    function refuse() external returns(bool) {
         require(msg.sender == newOwner,"not the recipient");
         newOwner = address(0);
         return true;
     }
     
-    function cancel() public returns(bool) {
+    function cancel() external returns(bool) {
         require(msg.sender == owner,"not the owner");
+        require(newOwner != address(0),"pending payment");
         newOwner = address(0);
         return true;
     }
 
-    function setKey(string _newKey) public returns(bool) {
+    function isPending() external constant returns(bool) {
+        return newOwner != address(0);
+    }
+
+    function setKey(string _newKey) external returns(bool) {
         require(msg.sender == owner,"not the owner");
         require(newOwner == address(0),"pending payment");
         encryptedKey = _newKey;
         return true;
     }
     
-    function setLink(string _link) public returns(bool) {
+    function setLink(string _link) external returns(bool) {
         require(msg.sender == owner,"not the owner");
         require(newOwner == address(0),"pending payment");
         link = _link;
         return true;
     }
 
-    function kill() public {
+    function kill() external returns(bool) {
         require(msg.sender == owner,"not the owner");
         require(newOwner == address(0),"pending payement");
         selfdestruct(owner);
+        return true;
     }
 }
